@@ -1,13 +1,8 @@
 import jsyaml from 'js-yaml'
 import each from 'lodash/each.js'
 import get from 'lodash/get.js'
-import { uuid } from './common.js'
-import {
-  validateSchema,
-  transformItemsInCollection,
-  hydrateSeqInCollection,
-} from './common.js'
-import { readFile as readFileNode } from 'fs/promises'
+import {hydrateSeqInCollection, transformItemsInCollection, uuid, validateSchema} from './common.js'
+import {readFile as readFileNode} from 'fs/promises'
 
 /**
  *
@@ -26,7 +21,7 @@ const readFile = (file) => {
 }
 
 const ensureUrl = (url) => {
-  let protUrl = url.startsWith('http') ? url : `http://${url}`
+  let protUrl = url
   // replace any double or triple slashes
   return protUrl.replace(/([^:]\/)\/+/g, '$1')
 }
@@ -315,7 +310,22 @@ const parseOpenApiCollection = (data) => {
     uid: uuid(),
     version: '1',
     items: [],
-    environments: [],
+    environments: [
+      {
+        name: 'localhost',
+        uid: uuid(),
+        variables: [
+          {
+            uid: uuid(),
+            name: 'base_url',
+            value: 'http://localhost:3000',
+            type: 'text',
+            secret: false,
+            enabled: true
+          }
+        ]
+      }
+    ],
   }
 
   return new Promise((resolve, reject) => {
@@ -337,9 +347,31 @@ const parseOpenApiCollection = (data) => {
 
       // TODO what if info.title not defined?
       brunoCollection.name = collectionData.info.title
-      let servers = collectionData.servers || []
-      let baseUrl = servers[0] ? getDefaultUrl(servers[0]) : ''
+      let servers = collectionData.servers || [{url:'http://localhost'}]
+      let baseUrl = '{{base_url}}'
       let securityConfig = getSecurity(collectionData)
+
+      brunoCollection.environments = servers.map(server => {
+        const url = server.url.split('//')
+        const url_after_protocol = url[1] ?? url[0]
+        const url2 = url_after_protocol.split(':')
+        const url_before_port = url2[0]
+
+        return {
+          name: url_before_port,
+          uid: uuid(),
+          variables: [
+            {
+              uid: uuid(),
+              name: 'base_url',
+              value: server.url,
+              type: 'text',
+              secret: false,
+              enabled: true
+            }
+          ]
+        }
+      })
 
       let allRequests = Object.entries(collectionData.paths)
         .map(([path, methods]) => {

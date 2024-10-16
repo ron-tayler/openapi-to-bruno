@@ -9,5 +9,5 @@ error handling is virtually non-existent, your own responsibility etc.
 ## Usage
 
 ```bash
-openapi-to-bruno --input <path-to-openapi-file> --output <path-to-output-directory>
+openapi-to-bruno generate <path-to-openapi-file> <path-to-output-directory>
 ```
