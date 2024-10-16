@@ -8,13 +8,14 @@ const sanitizeDirectoryName = (name) => {
   return name.replace(/[<>:"/\\|?*\x00-\x1F]+/g, '-')
 }
 
-const createDirectory = async (dir) => {
+const createDirectory = (dir) => {
   if (!dir) {
     throw new Error(`directory: path is null`)
   }
 
   if (fs.existsSync(dir)) {
-    throw new Error(`directory: ${dir} already exists`)
+    // throw new Error(`directory: ${dir} already exists`)
+    return void 0
   }
 
   return fs.mkdirSync(dir)
@@ -42,9 +43,9 @@ export async function importCollection(collection, collectionLocation) {
     let collectionName = sanitizeDirectoryName(collection.name)
     let collectionPath = path.join(collectionLocation, collectionName)
 
-    if (fs.existsSync(collectionPath)) {
-      throw new Error(`collection: ${collectionPath} already exists`)
-    }
+    // if (fs.existsSync(collectionPath)) {
+    //   throw new Error(`collection: ${collectionPath} already exists`)
+    // }
 
     // Recursive function to parse the collection items and create files/folders
     const parseCollectionItems = (items = [], currentPath) => {
@@ -56,7 +57,7 @@ export async function importCollection(collection, collectionLocation) {
         }
         if (item.type === 'folder') {
           const folderPath = path.join(currentPath, item.name)
-          fs.mkdirSync(folderPath)
+          createDirectory(folderPath)
 
           if (item?.root?.meta?.name) {
             const folderBruFilePath = path.join(folderPath, 'folder.bru')
@@ -107,7 +108,7 @@ export async function importCollection(collection, collectionLocation) {
       return brunoConfig
     }
 
-    await createDirectory(collectionPath)
+    createDirectory(collectionPath)
 
     // const uid = generateUidBasedOnHash(collectionPath)
     const brunoConfig = getBrunoJsonConfig(collection)
